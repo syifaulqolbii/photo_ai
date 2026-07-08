@@ -2,6 +2,10 @@
 import postgres from "postgres";
 import * as schema from "@/db/schema";
 
-// ponytail: family:4 forces IPv4 — VPS Docker has no IPv6 routing to Supabase
-const client = postgres(process.env.DATABASE_URL!, { ssl: "require", ...({ family: 4 } as any) });
+const url = new URL(process.env.DATABASE_URL!);
+// ponytail: explicit servername forces SNI in Docker — Supavisor needs it to identify tenant
+const client = postgres(process.env.DATABASE_URL!, {
+  ssl: { rejectUnauthorized: false, servername: url.hostname },
+  prepare: false,
+});
 export const db = drizzle(client, { schema });
