@@ -2,9 +2,11 @@ services:
   app:
     build: .
     restart: unless-stopped
-    ports:
-      - "3002:3000"
+    network_mode: host
     env_file: .env.production
+    environment:
+      - PORT=3002
+      - HOSTNAME=0.0.0.0
     dns:
       - 8.8.8.8
       - 8.8.4.4
