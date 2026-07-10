@@ -6,9 +6,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "**.supabase.co" },
       { protocol: "https", hostname: "replicate.delivery" },
+      { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
 };
 
 export default nextConfig;
-

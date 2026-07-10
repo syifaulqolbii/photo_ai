@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
 
@@ -48,14 +48,14 @@ export function CameraCapture({ onCapture }: Props) {
     <div className="flex flex-col items-center gap-3 w-full">
       {stream ? (
         <>
-          <div className="relative w-full overflow-hidden rounded-2xl border-2 border-pink-200 bg-black">
+          <div className="relative w-full overflow-hidden rounded-2xl border-2 border-pink-200 dark:border-pink-900/50 bg-black">
             <video ref={videoRef} autoPlay playsInline muted className="w-full" />
             <div className="absolute inset-0 pointer-events-none rounded-2xl ring-2 ring-inset ring-pink-300/30" />
           </div>
           <canvas ref={canvasRef} className="hidden" />
           <div className="flex w-full gap-3">
             <button onClick={stopCamera}
-              className="rounded-2xl border-2 border-gray-100 bg-gray-50 px-4 py-2 text-sm font-bold text-gray-400 hover:bg-gray-100 transition">
+              className="rounded-2xl border-2 border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-4 py-2 text-sm font-bold text-gray-400 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition">
               Batal
             </button>
             <button onClick={capture}
@@ -66,7 +66,7 @@ export function CameraCapture({ onCapture }: Props) {
         </>
       ) : (
         <button onClick={startCamera}
-          className="w-full rounded-2xl border-2 border-cyan-200 bg-cyan-50 py-6 text-sm font-semibold text-cyan-500 hover:bg-cyan-100 hover:border-cyan-400 transition">
+          className="w-full rounded-2xl border-2 border-cyan-200 dark:border-cyan-900 bg-cyan-50 dark:bg-cyan-950/30 py-6 text-sm font-semibold text-cyan-500 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 hover:border-cyan-400 dark:hover:border-cyan-800 transition">
           <span className="block text-2xl mb-1">📷</span>
           Buka Kamera
         </button>

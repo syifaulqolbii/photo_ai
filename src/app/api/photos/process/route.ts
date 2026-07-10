@@ -1,11 +1,29 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { photos } from "@/db/schema";
+import { photos, themes } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { THEME_PROMPTS } from "@/lib/themes";
 import { supabase, BUCKET } from "@/lib/supabase";
 
-const CF_URL = `https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-schnell`;
+const KIE = "https://api.kie.ai/api/v1/jobs";
+const kieHeaders = () => ({ Authorization: `Bearer ${process.env.KIE_API_KEY}`, "Content-Type": "application/json" });
+
+async function pollTask(taskId: string, maxMs = 120_000): Promise<string> {
+  const deadline = Date.now() + maxMs;
+  while (Date.now() < deadline) {
+    await new Promise(r => setTimeout(r, 4000));
+    const res = await fetch(`${KIE}/recordInfo?taskId=${taskId}`, { headers: kieHeaders() });
+    const j = await res.json() as { code: number; data?: { state?: string; resultJson?: string } };
+    const d = j.data;
+    if (!d) continue;
+    if (d.state === "fail") throw new Error("kie.ai task failed");
+    if (d.state === "success" && d.resultJson) {
+      const result = JSON.parse(d.resultJson) as { resultUrls?: string[] };
+      const url = result.resultUrls?.[0];
+      if (url) return url;
+    }
+  }
+  throw new Error("kie.ai task timed out");
+}
 
 export async function POST(req: NextRequest) {
   const { photoId, theme } = await req.json();
@@ -14,29 +32,36 @@ export async function POST(req: NextRequest) {
   const [photo] = await db.select().from(photos).where(eq(photos.id, photoId));
   if (!photo) return NextResponse.json({ error: "Photo not found" }, { status: 404 });
 
+  // ponytail: fetch prompt from DB themes, fallback to generic
+  const [themeRow] = await db.select().from(themes).where(eq(themes.id, theme));
+  const prompt = themeRow?.prompt ?? "artistic style transformation";
+
   await db.update(photos).set({ theme, status: "processing" }).where(eq(photos.id, photoId));
 
-  const cfRes = await fetch(CF_URL, {
+  const kieRes = await fetch(`${KIE}/createTask`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${process.env.CF_API_TOKEN}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt: THEME_PROMPTS[theme] ?? "artistic style transformation", num_steps: 4 }),
+    headers: kieHeaders(),
+    body: JSON.stringify({
+      model: "flux-2/flex-image-to-image",
+      input: { input_urls: [photo.originalUrl], prompt, aspect_ratio: "1:1", resolution: "1K", nsfw_checker: false },
+    }),
   });
 
-  if (!cfRes.ok) {
-    const err = await cfRes.text();
+  const kieJson = await kieRes.json() as { code: number; msg: string; data?: { taskId?: string } };
+  if (kieJson.code !== 200 || !kieJson.data?.taskId) {
     await db.update(photos).set({ status: "failed" }).where(eq(photos.id, photoId));
-    return NextResponse.json({ error: err }, { status: cfRes.status });
+    return NextResponse.json({ error: kieJson.msg }, { status: 500 });
   }
 
-  // ponytail: CF flux returns JSON { result: { image: base64 } }
-  const json = await cfRes.json() as { result?: { image?: string } };
-  const b64 = json?.result?.image;
-  if (!b64) {
+  let imageUrl: string;
+  try { imageUrl = await pollTask(kieJson.data.taskId); }
+  catch (e) {
     await db.update(photos).set({ status: "failed" }).where(eq(photos.id, photoId));
-    return NextResponse.json({ error: "No image in CF response" }, { status: 500 });
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 
-  const buffer = Buffer.from(b64, "base64");
+  const imgRes = await fetch(imageUrl);
+  const buffer = Buffer.from(await imgRes.arrayBuffer());
   const path = `results/${photoId}.jpg`;
   await supabase.storage.from(BUCKET).upload(path, buffer, { contentType: "image/jpeg", upsert: true });
   const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
