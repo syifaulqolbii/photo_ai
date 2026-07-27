@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/require-session";
 import { supabase, BUCKET } from "@/lib/supabase";
 import { KIE, kieHeaders, pollTask } from "@/lib/kie";
+import { getKieModels } from "@/lib/kie-models";
 
 export async function POST(req: NextRequest) {
   const denied = await requireSession(req);
@@ -12,11 +13,7 @@ export async function POST(req: NextRequest) {
   const prompt = String(form.get("prompt") ?? "");
   const model = String(form.get("model") ?? "flux-2/flex-image-to-image");
 
-  const ALLOWED_MODELS = [
-    "flux-2/flex-image-to-image",
-    "flux-2/pro-image-to-image",
-    "gpt-image-2-image-to-image",
-  ];
+  const ALLOWED_MODELS = getKieModels().map(m => m.id);
   if (!ALLOWED_MODELS.includes(model)) {
     return NextResponse.json({ error: "Model tidak diizinkan" }, { status: 401 });
   }

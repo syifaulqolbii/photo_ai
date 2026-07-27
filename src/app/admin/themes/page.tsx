@@ -4,11 +4,8 @@ import { useRouter } from "next/navigation";
 
 type Theme = { id: string; label: string; emoji: string; prompt: string; previewUrl: string; previewImages: string; active: boolean; sortOrder: number };
 
-const MODELS = [
-  { id: "flux-2/flex-image-to-image", label: "Flux 2 Flex (I2I)" },
-  { id: "flux-2/pro-image-to-image", label: "Flux 2 Pro (I2I)" },
-  { id: "gpt-image-2-image-to-image", label: "GPT Image 2 (I2I)" },
-];
+import { getKieModels } from "@/lib/kie-models";
+const MODELS = getKieModels();
 
 export default function ThemesPage() {
   const [themes, setThemes] = useState<Theme[]>([]);
@@ -23,8 +20,12 @@ export default function ThemesPage() {
   const [testResult, setTestResult] = useState<string | null>(null);
   const [testCredits, setTestCredits] = useState<number | null>(null);
   const [testLoading, setTestLoading] = useState(false);
+  const [credits, setCredits] = useState<number | null>(null);
 
-  useEffect(() => { fetch("/api/admin/themes").then(r => r.json()).then(setThemes); }, []);
+  useEffect(() => {
+    fetch("/api/admin/themes").then(r => r.json()).then(setThemes);
+    fetch("/api/admin/credits").then(r => r.ok ? r.json() : null).then(j => { if (j) setCredits(j.credits); });
+  }, []);
 
   function startEdit(t: Theme) { setEditing(t.id); setForm(t); }
 
@@ -110,7 +111,10 @@ export default function ThemesPage() {
 
       <div className="rounded-2xl bg-white border border-gray-100 p-5 space-y-4">
         <div>
-          <h2 className="text-base font-black text-gray-800">Preview & Tester</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-black text-gray-800">Preview & Tester</h2>
+            <span className="text-xs font-semibold px-2 py-1 rounded-full bg-pink-50 text-pink-600">Saldo Kredit: {credits ?? "?"}</span>
+          </div>
           <p className="text-xs text-gray-400">Upload foto tes, atur prompt & model, lalu simpan jadi preview tema.</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
