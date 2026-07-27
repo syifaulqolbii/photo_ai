@@ -50,7 +50,7 @@ export default function ThemesPage() {
       fd.append("file", testFile);
       fd.append("prompt", testPrompt);
       fd.append("model", testModel);
-      const res = await fetch("/api/admin/themes/test", { method: "POST", body: fd });
+      const res = await fetch("/api/admin/preview-test", { method: "POST", body: fd });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error ?? "Test gagal");
       setTestResult(j.imageUrl);
