@@ -190,7 +190,6 @@ export default function ThemesPage() {
             <input placeholder="Label" value={form.label ?? ""} onChange={e => setForm({ ...form, label: e.target.value })} className="w-full rounded-2xl border-2 border-gray-100 px-4 py-2 text-sm outline-none focus:border-pink-300" />
             <input placeholder="Emoji" value={form.emoji ?? ""} onChange={e => setForm({ ...form, emoji: e.target.value })} className="w-full rounded-2xl border-2 border-gray-100 px-4 py-2 text-sm outline-none focus:border-pink-300" />
             <textarea placeholder="Prompt" value={form.prompt ?? ""} onChange={e => setForm({ ...form, prompt: e.target.value })} className="w-full rounded-2xl border-2 border-gray-100 px-4 py-2 text-sm outline-none focus:border-pink-300 h-20" />
-            <input placeholder="Preview URL" value={form.previewUrl ?? ""} onChange={e => setForm({ ...form, previewUrl: e.target.value })} className="w-full rounded-2xl border-2 border-gray-100 px-4 py-2 text-sm outline-none focus:border-pink-300" />
             <label className="flex items-center gap-2"><input type="checkbox" checked={form.active ?? true} onChange={e => setForm({ ...form, active: e.target.checked })} /><span className="text-xs font-semibold text-gray-600">Aktif</span></label>
             <div className="flex gap-3">
               <button onClick={() => setEditing(null)} className="flex-1 rounded-2xl border-2 border-gray-100 py-2 text-xs font-bold text-gray-400 hover:bg-gray-50">Batal</button>
