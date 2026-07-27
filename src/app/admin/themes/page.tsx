@@ -22,6 +22,7 @@ export default function ThemesPage() {
   const [testCredits, setTestCredits] = useState<number | null>(null);
   const [testLoading, setTestLoading] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
+  const [modelModal, setModelModal] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/themes").then(r => r.json()).then(setThemes);
@@ -135,7 +136,10 @@ export default function ThemesPage() {
         <div>
           <div className="flex items-center justify-between">
             <h2 className="text-base font-black text-gray-800">Preview & Tester</h2>
-            <span className="text-xs font-semibold px-2 py-1 rounded-full bg-pink-50 text-pink-600">Saldo Kredit: {credits ?? "?"}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold px-2 py-1 rounded-full bg-pink-50 text-pink-600">Saldo Kredit: {credits ?? "?"}</span>
+              <button onClick={() => setModelModal(true)} className="text-xs font-semibold px-2 py-1 rounded-full border border-pink-200 text-pink-600 hover:bg-pink-50 transition">Kelola Model</button>
+            </div>
           </div>
           <p className="text-xs text-gray-400">Upload foto tes, atur prompt & model, lalu simpan jadi preview tema.</p>
         </div>
@@ -152,22 +156,6 @@ export default function ThemesPage() {
             <select value={testModel} onChange={e => setTestModel(e.target.value)} className="w-full rounded-2xl border-2 border-gray-100 px-4 py-2 text-sm outline-none focus:border-pink-300">
               {models.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
             </select>
-          </div>
-        </div>
-        <div className="rounded-xl bg-gray-50 p-3 space-y-2">
-          <p className="text-xs font-bold text-gray-500">Tambah / Kelola Model</p>
-          <div className="flex gap-2">
-            <input placeholder="Model id (mis. flux-2/flex-image-to-image)" value={newModelId} onChange={e => setNewModelId(e.target.value)} className="flex-1 rounded-xl border-2 border-gray-100 px-3 py-2 text-xs outline-none focus:border-pink-300" />
-            <input placeholder="Label" value={newModelLabel} onChange={e => setNewModelLabel(e.target.value)} className="w-32 rounded-xl border-2 border-gray-100 px-3 py-2 text-xs outline-none focus:border-pink-300" />
-            <button onClick={addModel} className="rounded-xl bg-pink-500 px-3 py-2 text-xs font-black text-white hover:opacity-90 transition">+ Model</button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {models.map(m => (
-              <span key={m.id} className="inline-flex items-center gap-1 text-xs bg-white border border-gray-100 rounded-full px-2 py-1">
-                {m.label}
-                <button onClick={() => removeModel(m.id)} className="text-red-400 font-bold leading-none">×</button>
-              </span>
-            ))}
           </div>
         </div>
         <div>
@@ -207,6 +195,30 @@ export default function ThemesPage() {
             <div className="flex gap-3">
               <button onClick={() => setEditing(null)} className="flex-1 rounded-2xl border-2 border-gray-100 py-2 text-xs font-bold text-gray-400 hover:bg-gray-50">Batal</button>
               <button onClick={save} className="flex-1 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 py-2 text-xs font-black text-white hover:opacity-90">Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setModelModal(false)}>
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-base font-black text-gray-800">Kelola Model</h2>
+            <div className="flex gap-2">
+              <input placeholder="Model id (mis. flux-2/flex-image-to-image)" value={newModelId} onChange={e => setNewModelId(e.target.value)} className="flex-1 rounded-xl border-2 border-gray-100 px-3 py-2 text-xs outline-none focus:border-pink-300" />
+              <input placeholder="Label" value={newModelLabel} onChange={e => setNewModelLabel(e.target.value)} className="w-32 rounded-xl border-2 border-gray-100 px-3 py-2 text-xs outline-none focus:border-pink-300" />
+              <button onClick={addModel} className="rounded-xl bg-pink-500 px-3 py-2 text-xs font-black text-white hover:opacity-90 transition">+ Model</button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {models.map(m => (
+                <span key={m.id} className="inline-flex items-center gap-1 text-xs bg-white border border-gray-100 rounded-full px-2 py-1">
+                  {m.label}
+                  <button onClick={() => removeModel(m.id)} className="text-red-400 font-bold leading-none">×</button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setModelModal(false)} className="flex-1 rounded-2xl border-2 border-gray-100 py-2 text-xs font-bold text-gray-400 hover:bg-gray-50">Tutup</button>
             </div>
           </div>
         </div>
