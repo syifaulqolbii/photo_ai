@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionCookie } from "better-auth/cookies";
 
-export function proxy(request: NextRequest) {
-  const session = getSessionCookie(request);
+export function middleware(request: NextRequest) {
+  const session = request.cookies.get("pb_session")?.value;
   const { pathname } = request.nextUrl;
 
   if (!session && pathname !== "/login") {
