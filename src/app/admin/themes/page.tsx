@@ -3,9 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Theme = { id: string; label: string; emoji: string; prompt: string; previewUrl: string; previewImages: string; active: boolean; sortOrder: number };
-
-import { getKieModels } from "@/lib/kie-models";
-const MODELS = getKieModels();
+type KieModel = { id: string; label: string };
 
 export default function ThemesPage() {
   const [themes, setThemes] = useState<Theme[]>([]);
@@ -13,10 +11,13 @@ export default function ThemesPage() {
   const [form, setForm] = useState<Partial<Theme>>({});
   const router = useRouter();
 
+  const [models, setModels] = useState<KieModel[]>([]);
+  const [newModelId, setNewModelId] = useState("");
+  const [newModelLabel, setNewModelLabel] = useState("");
   const [testerThemeId, setTesterThemeId] = useState<string>("");
   const [testFile, setTestFile] = useState<File | null>(null);
   const [testPrompt, setTestPrompt] = useState<string>("");
-  const [testModel, setTestModel] = useState<string>(MODELS[0].id);
+  const [testModel, setTestModel] = useState<string>("");
   const [testResult, setTestResult] = useState<string | null>(null);
   const [testCredits, setTestCredits] = useState<number | null>(null);
   const [testLoading, setTestLoading] = useState(false);
@@ -25,6 +26,10 @@ export default function ThemesPage() {
   useEffect(() => {
     fetch("/api/admin/themes").then(r => r.json()).then(setThemes);
     fetch("/api/admin/credits").then(r => r.ok ? r.json() : null).then(j => { if (j) setCredits(j.credits); });
+    fetch("/api/admin/kie-models").then(r => r.ok ? r.json() : []).then((list: KieModel[]) => {
+      setModels(list);
+      if (!testModel && list.length) setTestModel(list[0].id);
+    });
   }, []);
 
   function startEdit(t: Theme) { setEditing(t.id); setForm(t); }
@@ -87,6 +92,23 @@ export default function ThemesPage() {
     setThemes(await fetch("/api/admin/themes").then(r => r.json()));
   }
 
+  async function addModel() {
+    if (!newModelId || !newModelLabel) return;
+    const res = await fetch("/api/admin/kie-models", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: newModelId, label: newModelLabel }),
+    });
+    if (!res.ok) { alert("Gagal tambah model (id mungkin duplikat)"); return; }
+    setModels(await fetch("/api/admin/kie-models").then(r => r.json()));
+    setNewModelId(""); setNewModelLabel("");
+  }
+
+  async function removeModel(id: string) {
+    await fetch(`/api/admin/kie-models/${id}`, { method: "DELETE" });
+    setModels(await fetch("/api/admin/kie-models").then(r => r.json()));
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -128,8 +150,24 @@ export default function ThemesPage() {
           <div>
             <label className="mb-1 block text-xs font-bold text-gray-500">Model</label>
             <select value={testModel} onChange={e => setTestModel(e.target.value)} className="w-full rounded-2xl border-2 border-gray-100 px-4 py-2 text-sm outline-none focus:border-pink-300">
-              {MODELS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+              {models.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
             </select>
+          </div>
+        </div>
+        <div className="rounded-xl bg-gray-50 p-3 space-y-2">
+          <p className="text-xs font-bold text-gray-500">Tambah / Kelola Model</p>
+          <div className="flex gap-2">
+            <input placeholder="Model id (mis. flux-2/flex-image-to-image)" value={newModelId} onChange={e => setNewModelId(e.target.value)} className="flex-1 rounded-xl border-2 border-gray-100 px-3 py-2 text-xs outline-none focus:border-pink-300" />
+            <input placeholder="Label" value={newModelLabel} onChange={e => setNewModelLabel(e.target.value)} className="w-32 rounded-xl border-2 border-gray-100 px-3 py-2 text-xs outline-none focus:border-pink-300" />
+            <button onClick={addModel} className="rounded-xl bg-pink-500 px-3 py-2 text-xs font-black text-white hover:opacity-90 transition">+ Model</button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {models.map(m => (
+              <span key={m.id} className="inline-flex items-center gap-1 text-xs bg-white border border-gray-100 rounded-full px-2 py-1">
+                {m.label}
+                <button onClick={() => removeModel(m.id)} className="text-red-400 font-bold leading-none">×</button>
+              </span>
+            ))}
           </div>
         </div>
         <div>

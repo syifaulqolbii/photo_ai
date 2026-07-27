@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   const prompt = String(form.get("prompt") ?? "");
   const model = String(form.get("model") ?? "flux-2/flex-image-to-image");
 
-  const ALLOWED_MODELS = getKieModels().map(m => m.id);
+  const ALLOWED_MODELS = (await getKieModels()).map(m => m.id);
   if (!ALLOWED_MODELS.includes(model)) {
     return NextResponse.json({ error: "Model tidak diizinkan" }, { status: 401 });
   }
