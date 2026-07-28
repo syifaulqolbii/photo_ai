@@ -24,6 +24,10 @@ export default function ThemesPage() {
   const [credits, setCredits] = useState<number | null>(null);
   const [modelModal, setModelModal] = useState(false);
 
+  const [userModel, setUserModel] = useState<string>("");
+  const [userModelSel, setUserModelSel] = useState<string>("");
+  const [savingModel, setSavingModel] = useState(false);
+
   useEffect(() => {
     fetch("/api/admin/themes").then(r => r.json()).then(setThemes);
     fetch("/api/admin/credits").then(r => r.ok ? r.json() : null).then(j => { if (j) setCredits(j.credits); });
@@ -31,7 +35,28 @@ export default function ThemesPage() {
       setModels(list);
       if (!testModel && list.length) setTestModel(list[0].id);
     });
+    fetch("/api/admin/settings").then(r => r.ok ? r.json() : null).then((j: any) => {
+      if (j) { setUserModel(j.userModel ?? ""); setUserModelSel(j.userModel ?? ""); }
+    });
   }, []);
+
+  async function saveUserModel() {
+    if (!userModelSel) return;
+    setSavingModel(true);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userModel: userModelSel }),
+      });
+      if (!res.ok) throw new Error("Gagal menyimpan");
+      setUserModel(userModelSel);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Gagal menyimpan");
+    } finally {
+      setSavingModel(false);
+    }
+  }
 
   function startEdit(t: Theme) { setEditing(t.id); setForm(t); }
 
@@ -130,6 +155,26 @@ export default function ThemesPage() {
             <button onClick={() => del(t.id)} className="text-xs font-semibold text-red-400 hover:text-red-500">Hapus</button>
           </div>
         ))}
+      </div>
+
+      <div className="rounded-2xl bg-white border border-gray-100 p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-black text-gray-800">Model Proses User</h2>
+          {userModel && userModel !== userModelSel && <span className="text-[11px] font-semibold text-amber-500">Belum disimpan</span>}
+        </div>
+        <p className="text-xs text-gray-400">Model ini dipakai saat user memproses foto. Atur dynamically, tidak di-hardcode.</p>
+        <div className="flex gap-2">
+          <select value={userModelSel} onChange={e => setUserModelSel(e.target.value)} className="flex-1 rounded-2xl border-2 border-gray-100 px-4 py-2 text-sm outline-none focus:border-pink-300">
+            {models.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+          </select>
+          <button onClick={saveUserModel} disabled={!userModelSel || savingModel || userModel === userModelSel}
+            className="rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 px-4 py-2 text-xs font-black text-white hover:opacity-90 transition disabled:opacity-40">
+            {savingModel ? "Menyimpan..." : "Simpan"}
+          </button>
+        </div>
+        {userModel && (
+          <p className="text-xs text-gray-400">Aktif sekarang: <span className="font-bold text-gray-600">{models.find(m => m.id === userModel)?.label ?? userModel}</span></p>
+        )}
       </div>
 
       <div className="rounded-2xl bg-white border border-gray-100 p-5 space-y-4">

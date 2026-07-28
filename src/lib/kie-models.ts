@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { kieModels } from "@/db/schema";
+import { getSetting } from "@/lib/settings";
 
 const DEFAULTS = [
   { id: "flux-2/flex-image-to-image", label: "Flux 2 Flex (I2I)" },
@@ -16,4 +17,12 @@ export async function getKieModels(): Promise<KieModelRow[]> {
     rows = await db.select().from(kieModels).orderBy(kieModels.label);
   }
   return rows;
+}
+
+// ponytail: model dipakai untuk proses user, diatur admin via settings; fallback model pertama / pro
+export async function getUserModel(): Promise<string> {
+  const setting = await getSetting("userModel");
+  if (setting) return setting;
+  const rows = await getKieModels();
+  return rows[0]?.id ?? "flux-2/pro-image-to-image";
 }

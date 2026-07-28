@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/require-session";
 import { supabase, BUCKET } from "@/lib/supabase";
-import { KIE, kieHeaders, pollTask } from "@/lib/kie";
+import { KIE, kieHeaders, pollTask, fetchCreditBalance } from "@/lib/kie";
 import { getKieModels } from "@/lib/kie-models";
 
 export async function POST(req: NextRequest) {
@@ -28,12 +28,14 @@ export async function POST(req: NextRequest) {
   await supabase.storage.from(BUCKET).upload(inPath, inBuf, { contentType: file.type, upsert: true });
   const inUrl = supabase.storage.from(BUCKET).getPublicUrl(inPath).data.publicUrl;
 
+  const before = await fetchCreditBalance();
+
   const kieRes = await fetch(`${KIE}/createTask`, {
     method: "POST",
     headers: kieHeaders(),
     body: JSON.stringify({
       model,
-      input: { input_urls: [inUrl], prompt, aspect_ratio: "1:1", resolution: "1K", nsfw_checker: false },
+      input: { input_urls: [inUrl], prompt, aspect_ratio: "auto", resolution: "1K", nsfw_checker: false },
     }),
   });
   const kieJson = await kieRes.json() as { code: number; msg: string; data?: { taskId?: string } };
@@ -43,13 +45,15 @@ export async function POST(req: NextRequest) {
   }
 
   let resultUrl: string;
-  let credits: number | null;
   try {
-    ({ url: resultUrl, credits } = await pollTask(kieJson.data.taskId));
+    resultUrl = await pollTask(kieJson.data.taskId);
   } catch (e) {
     console.error("[preview-test] poll failed:", e);
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
+
+  const after = await fetchCreditBalance();
+  const credits = before != null && after != null ? before - after : null;
 
   const imgRes = await fetch(resultUrl);
   const outBuf = Buffer.from(await imgRes.arrayBuffer());

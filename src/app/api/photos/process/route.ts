@@ -4,6 +4,7 @@ import { photos, themes } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { supabase, BUCKET } from "@/lib/supabase";
 import { KIE, kieHeaders, pollTask } from "@/lib/kie";
+import { getUserModel } from "@/lib/kie-models";
 
 export async function POST(req: NextRequest) {
   const { photoId, theme } = await req.json();
@@ -18,12 +19,14 @@ export async function POST(req: NextRequest) {
 
   await db.update(photos).set({ theme, status: "processing" }).where(eq(photos.id, photoId));
 
+  const model = await getUserModel();
+
   const kieRes = await fetch(`${KIE}/createTask`, {
     method: "POST",
     headers: kieHeaders(),
     body: JSON.stringify({
-      model: "flux-2/flex-image-to-image",
-      input: { input_urls: [photo.originalUrl], prompt, aspect_ratio: "1:1", resolution: "1K", nsfw_checker: false },
+      model,
+      input: { input_urls: [photo.originalUrl], prompt, aspect_ratio: "auto", resolution: "1K", nsfw_checker: false },
     }),
   });
 
@@ -34,7 +37,7 @@ export async function POST(req: NextRequest) {
   }
 
   let imageUrl: string;
-  try { ({ url: imageUrl } = await pollTask(kieJson.data.taskId)); }
+  try { imageUrl = await pollTask(kieJson.data.taskId); }
   catch (e) {
     await db.update(photos).set({ status: "failed" }).where(eq(photos.id, photoId));
     console.error("[process] poll failed:", e); return NextResponse.json({ error: String(e) }, { status: 500 });

@@ -76,3 +76,9 @@ export const kieModels = pgTable("kie_models", {
   label: text("label").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const settings = pgTable("settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
