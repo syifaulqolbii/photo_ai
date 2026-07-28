@@ -19,6 +19,7 @@ export default function ThemesPage() {
   const [testPrompt, setTestPrompt] = useState<string>("");
   const [testModel, setTestModel] = useState<string>("");
   const [testResult, setTestResult] = useState<string | null>(null);
+  const [testModalOpen, setTestModalOpen] = useState(false);
   const [testCredits, setTestCredits] = useState<number | null>(null);
   const [testLoading, setTestLoading] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
@@ -81,6 +82,7 @@ export default function ThemesPage() {
       if (!res.ok) throw new Error(j.error ?? "Test gagal");
       setTestResult(j.imageUrl);
       setTestCredits(j.credits);
+      setTestModalOpen(true);
     } catch (e) {
       alert(e instanceof Error ? e.message : "Test gagal");
     } finally {
@@ -215,14 +217,20 @@ export default function ThemesPage() {
           className="w-full rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 py-3 text-sm font-black text-white shadow-md shadow-pink-200 hover:opacity-90 transition disabled:opacity-40">
           {testLoading ? "Memproses..." : "Test"}
         </button>
-        {testResult && (
-          <div className="space-y-3">
-            <img src={testResult} alt="preview" className="w-full rounded-2xl border border-gray-100" />
-            <p className="text-xs font-semibold text-gray-500">Kredit terpakai: {testCredits ?? "?"}</p>
-            <button onClick={savePreview} disabled={!testerThemeId}
-              className="w-full rounded-2xl border-2 border-pink-200 py-2.5 text-xs font-black text-pink-600 hover:bg-pink-50 transition disabled:opacity-40">
-              Jadikan preview tema
-            </button>
+        {testResult && testModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setTestModalOpen(false)}>
+            <div className="w-full max-w-md rounded-3xl bg-white p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-black text-gray-800">Hasil Test</h2>
+                <button onClick={() => setTestModalOpen(false)} className="text-xs font-bold text-gray-400 hover:text-pink-500">Tutup</button>
+              </div>
+              <img src={testResult} alt="preview" className="w-full rounded-2xl border border-gray-100" />
+              <p className="text-xs font-semibold text-gray-500">Kredit terpakai: {testCredits ?? "?"}</p>
+              <button onClick={savePreview} disabled={!testerThemeId}
+                className="w-full rounded-2xl border-2 border-pink-200 py-2.5 text-xs font-black text-pink-600 hover:bg-pink-50 transition disabled:opacity-40">
+                Jadikan preview tema
+              </button>
+            </div>
           </div>
         )}
       </div>
