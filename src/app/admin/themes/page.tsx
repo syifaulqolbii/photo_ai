@@ -30,7 +30,7 @@ export default function ThemesPage() {
   const [savingModel, setSavingModel] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/themes", { cache: "no-store" }).then(r => r.json()).then(setThemes);
+    fetch("/api/admin/themes", { cache: "no-store" }).then(r => r.ok ? r.json() : []).then(setThemes);
     fetch("/api/admin/credits").then(r => r.ok ? r.json() : null).then(j => { if (j) setCredits(j.credits); });
     fetch("/api/admin/kie-models").then(r => r.ok ? r.json() : []).then((list: KieModel[]) => {
       setModels(list);
@@ -103,14 +103,19 @@ export default function ThemesPage() {
   }
   function startNew() { setEditing("new"); setForm({ active: true, sortOrder: themes.length, emoji: "🎨" }); }
 
+  async function errText(res: Response): Promise<string> {
+    const text = await res.text();
+    try { const j = JSON.parse(text); return j.error ?? text; } catch { return text || `HTTP ${res.status}`; }
+  }
+
   async function save() {
     try {
       if (editing === "new") {
         const res = await fetch("/api/admin/themes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-        if (!res.ok) throw new Error((await res.json()).error ?? "Gagal simpan");
+        if (!res.ok) throw new Error(await errText(res));
       } else {
         const res = await fetch(`/api/admin/themes/${editing}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-        if (!res.ok) throw new Error((await res.json()).error ?? "Gagal simpan");
+        if (!res.ok) throw new Error(await errText(res));
       }
       setEditing(null);
       const r = await fetch("/api/admin/themes", { cache: "no-store" });
