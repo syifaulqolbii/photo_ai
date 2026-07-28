@@ -10,8 +10,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await req.json();
   if (body.previewImages && Array.isArray(body.previewImages)) body.previewImages = JSON.stringify(body.previewImages);
-  const [t] = await db.update(themes).set(body).where(eq(themes.id, id)).returning();
-  return NextResponse.json(t);
+  try {
+    const [t] = await db.update(themes).set(body).where(eq(themes.id, id)).returning();
+    if (!t) {
+      console.error("[themes PATCH] 0 rows for id=", id);
+      return NextResponse.json({ error: "Tema tidak ditemukan" }, { status: 404 });
+    }
+    return NextResponse.json(t);
+  } catch (e) {
+    console.error("[themes PATCH] error id=", id, e);
+    return NextResponse.json({ error: "Gagal update tema" }, { status: 500 });
+  }
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
