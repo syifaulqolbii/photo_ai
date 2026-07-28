@@ -146,7 +146,7 @@ export default function ThemesPage() {
         {themes.map(t => (
           <div key={t.id} className="rounded-2xl bg-white border border-gray-100 p-4 flex items-center gap-4">
             <span className="text-2xl">{t.emoji}</span>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <p className="text-sm font-black text-gray-700">{t.label}</p>
               <p className="text-xs text-gray-400 truncate">{t.prompt}</p>
             </div>
