@@ -3,6 +3,8 @@ import { requireSession } from "@/lib/require-session";
 import { db } from "@/lib/db";
 import { themes } from "@/db/schema";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   const denied = await requireSession(req);
   if (denied) return denied;

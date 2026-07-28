@@ -30,7 +30,7 @@ export default function ThemesPage() {
   const [savingModel, setSavingModel] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/themes").then(r => r.json()).then(setThemes);
+    fetch("/api/admin/themes", { cache: "no-store" }).then(r => r.json()).then(setThemes);
     fetch("/api/admin/credits").then(r => r.ok ? r.json() : null).then(j => { if (j) setCredits(j.credits); });
     fetch("/api/admin/kie-models").then(r => r.ok ? r.json() : []).then((list: KieModel[]) => {
       setModels(list);
@@ -104,20 +104,26 @@ export default function ThemesPage() {
   function startNew() { setEditing("new"); setForm({ active: true, sortOrder: themes.length, emoji: "🎨" }); }
 
   async function save() {
-    if (editing === "new") {
-      await fetch("/api/admin/themes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-    } else {
-      await fetch(`/api/admin/themes/${editing}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    try {
+      if (editing === "new") {
+        const res = await fetch("/api/admin/themes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+        if (!res.ok) throw new Error((await res.json()).error ?? "Gagal simpan");
+      } else {
+        const res = await fetch(`/api/admin/themes/${editing}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+        if (!res.ok) throw new Error((await res.json()).error ?? "Gagal simpan");
+      }
+      setEditing(null);
+      const r = await fetch("/api/admin/themes", { cache: "no-store" });
+      setThemes(await r.json());
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Gagal simpan");
     }
-    setEditing(null);
-    const r = await fetch("/api/admin/themes");
-    setThemes(await r.json());
   }
 
   async function del(id: string) {
     if (!confirm("Hapus tema?")) return;
     await fetch(`/api/admin/themes/${id}`, { method: "DELETE" });
-    setThemes(await fetch("/api/admin/themes").then(r => r.json()));
+    setThemes(await fetch("/api/admin/themes", { cache: "no-store" }).then(r => r.json()));
   }
 
   async function addModel() {
