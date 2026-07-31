@@ -8,10 +8,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const denied = await requireSession(req);
   if (denied) return denied;
   const { id } = await params;
-  const body = await req.json();
-  if (body.previewImages && Array.isArray(body.previewImages)) body.previewImages = JSON.stringify(body.previewImages);
+  const body = await req.json() as Record<string, unknown>;
   try {
-    const [t] = await db.update(themes).set(body).where(eq(themes.id, id)).returning();
+    const update: Partial<typeof themes.$inferInsert> = {
+      label: String(body.label ?? ""),
+      emoji: String(body.emoji ?? "🎨"),
+      prompt: String(body.prompt ?? ""),
+      previewUrl: String(body.previewUrl ?? ""),
+      previewImages: typeof body.previewImages === "string" ? body.previewImages : JSON.stringify(body.previewImages ?? []),
+      active: Boolean(body.active),
+      sortOrder: Number(body.sortOrder ?? 0),
+    };
+    const [t] = await db.update(themes).set(update).where(eq(themes.id, id)).returning();
     if (!t) {
       console.error("[themes PATCH] 0 rows for id=", id);
       return NextResponse.json({ error: "Tema tidak ditemukan" }, { status: 404 });
