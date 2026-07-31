@@ -83,3 +83,13 @@ export const settings = pgTable("settings", {
   value: text("value").notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const kieTestResults = pgTable("kie_test_results", {
+  taskId: text("task_id").primaryKey(),
+  themeId: text("theme_id"),
+  status: text("status").notNull().default("processing"),
+  imageUrl: text("image_url"),
+  credits: integer("credits"),
+  beforeBalance: integer("before_balance"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

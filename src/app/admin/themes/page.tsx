@@ -77,23 +77,29 @@ export default function ThemesPage() {
       fd.append("file", testFile);
       fd.append("prompt", testPrompt);
       fd.append("model", testModel);
+      fd.append("themeId", testerThemeId);
       const res = await fetch("/api/admin/preview-test", { method: "POST", body: fd });
       const jt = await res.text();
       let j: any;
       try { j = JSON.parse(jt); } catch { throw new Error("Respons tidak valid dari server (cek API key kie.ai)"); }
-      if (!res.ok) {
-        const msg = j?.error ?? "Test gagal";
-        if (res.status === 504) throw new Error("Request timeout: generasi kie.ai lewat batas waktu server. Naikkan proxy_read_timeout nginx / gunakan callBackUrl.");
-        throw new Error(msg);
-      }
-      setTestResult(j.imageUrl);
-      setTestCredits(j.credits);
-      setTestModalOpen(true);
+      if (!res.ok) throw new Error(j?.error ?? "Test gagal");
+      await pollTest(j.taskId);
     } catch (e) {
       alert(e instanceof Error ? e.message : "Test gagal");
     } finally {
       setTestLoading(false);
     }
+  }
+
+  async function pollTest(taskId: string) {
+    for (let i = 0; i < 80; i++) {
+      const r = await fetch(`/api/admin/preview-test/status?taskId=${taskId}`);
+      const s = await r.json();
+      if (s.status === "done") { setTestResult(s.imageUrl); setTestCredits(s.credits); setTestModalOpen(true); return; }
+      if (s.status === "failed") throw new Error("Test gagal diproses kie.ai");
+      await new Promise(res => setTimeout(res, 2500));
+    }
+    throw new Error("Test timeout (callback kie.ai tidak memanggil)");
   }
 
   async function savePreview() {
