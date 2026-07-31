@@ -11,7 +11,8 @@ export function ThemeCard({ theme, selected, onSelect }: {
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [idx, setIdx] = useState(0);
-  const total = theme.previewImages.length;
+  const imgs = theme.previewImages.length ? theme.previewImages : (theme.previewUrl ? [theme.previewUrl] : []);
+  const total = imgs.length;
 
   function open() { setIdx(0); setModalOpen(true); }
   function close() { setModalOpen(false); }
@@ -66,9 +67,9 @@ export function ThemeCard({ theme, selected, onSelect }: {
 
             {/* Image */}
             <div className="relative w-full aspect-square bg-gray-50 dark:bg-slate-900">
-              <Image
-                src={theme.previewImages[idx]}
-                alt={`${theme.label} ${idx + 1}`}
+               <Image
+                 src={imgs[idx]}
+                 alt={`${theme.label} ${idx + 1}`}
                 fill
                 className="object-contain"
                 sizes="320px"
@@ -83,7 +84,7 @@ export function ThemeCard({ theme, selected, onSelect }: {
                 ›
               </button>
               <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
-                {theme.previewImages.map((_, i) => (
+                {imgs.map((_, i) => (
                   <button key={i} onClick={() => setIdx(i)}
                     className={cn("w-1.5 h-1.5 rounded-full transition-all", i === idx ? "bg-pink-500" : "bg-gray-300")} />
                 ))}

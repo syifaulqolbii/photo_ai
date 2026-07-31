@@ -107,7 +107,7 @@ export default function ThemesPage() {
     const res = await fetch(`/api/admin/themes/${testerThemeId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ previewUrl: testResult }),
+      body: JSON.stringify({ previewUrl: testResult, previewImages: JSON.stringify([testResult]) }),
     });
     if (!res.ok) { alert("Gagal menyimpan preview"); return; }
     setThemes(await fetch("/api/admin/themes").then(r => r.json()));
