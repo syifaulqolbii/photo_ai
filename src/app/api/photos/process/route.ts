@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { photos, themes } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { supabase, BUCKET } from "@/lib/supabase";
-import { KIE, kieHeaders, pollTask } from "@/lib/kie";
+import { KIE, kieHeaders } from "@/lib/kie";
 import { getUserModel } from "@/lib/kie-models";
 
 export async function POST(req: NextRequest) {
@@ -21,34 +20,25 @@ export async function POST(req: NextRequest) {
 
   const model = await getUserModel();
 
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? `https://${req.headers.get("host") ?? "localhost:3000"}`;
+  const callBackUrl = `${base}/api/kie/callback`;
+
   const kieRes = await fetch(`${KIE}/createTask`, {
     method: "POST",
     headers: kieHeaders(),
     body: JSON.stringify({
       model,
+      callBackUrl,
       input: { input_urls: [photo.originalUrl], prompt, aspect_ratio: "auto", resolution: "1K", nsfw_checker: false },
     }),
   });
-
   const kieJson = await kieRes.json() as { code: number; msg: string; data?: { taskId?: string } };
   if (kieJson.code !== 200 || !kieJson.data?.taskId) {
     await db.update(photos).set({ status: "failed" }).where(eq(photos.id, photoId));
     console.error("[process] kie.ai createTask failed:", kieJson); return NextResponse.json({ error: kieJson.msg }, { status: 500 });
   }
 
-  let imageUrl: string;
-  try { imageUrl = await pollTask(kieJson.data.taskId); }
-  catch (e) {
-    await db.update(photos).set({ status: "failed" }).where(eq(photos.id, photoId));
-    console.error("[process] poll failed:", e); return NextResponse.json({ error: String(e) }, { status: 500 });
-  }
-
-  const imgRes = await fetch(imageUrl);
-  const buffer = Buffer.from(await imgRes.arrayBuffer());
-  const path = `results/${photoId}.jpg`;
-  await supabase.storage.from(BUCKET).upload(path, buffer, { contentType: "image/jpeg", upsert: true });
-  const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
-
-  await db.update(photos).set({ status: "done", resultUrl: urlData.publicUrl }).where(eq(photos.id, photoId));
-  return NextResponse.json({ status: "done", resultUrl: urlData.publicUrl });
+  // ponytail: async — kie.ai memanggil /api/kie/callback saat selesai; request ini langsung balik biar gak kena timeout proxy
+  await db.update(photos).set({ kieTaskId: kieJson.data.taskId }).where(eq(photos.id, photoId));
+  return NextResponse.json({ status: "processing" });
 }

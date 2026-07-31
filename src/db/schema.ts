@@ -9,6 +9,7 @@ export const photos = pgTable("photos", {
   theme: text("theme").notNull(),
   status: photoStatusEnum("status").notNull().default("pending"),
   replicateId: text("replicate_id"),
+  kieTaskId: text("kie_task_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
