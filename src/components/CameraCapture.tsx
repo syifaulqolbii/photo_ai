@@ -4,24 +4,45 @@ import { useRef, useState, useCallback, useEffect } from "react";
 
 type Props = { onCapture: (file: File) => void };
 
+const STORAGE_KEY = "selectedCameraId";
+
 export function CameraCapture({ onCapture }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (videoRef.current) videoRef.current.srcObject = stream;
   }, [stream]);
 
-  const startCamera = useCallback(async () => {
+  const startCamera = useCallback(async (deviceId?: string) => {
+    setError(null);
     try {
-      const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      const constraints: MediaStreamConstraints = deviceId
+        ? { video: { deviceId: { exact: deviceId } } }
+        : { video: { facingMode: "user" } };
+      const s = await navigator.mediaDevices.getUserMedia(constraints);
       setStream(s);
+      const active = s.getVideoTracks()[0]?.getSettings().deviceId ?? "";
+      if (active) setSelectedId(active);
+      const list = await navigator.mediaDevices.enumerateDevices();
+      setDevices(list.filter((d) => d.kind === "videoinput"));
     } catch {
+      // ponytail: kalau deviceId tersimpan sudah lepas (exact gagal), fallback ke kamera default
+      if (deviceId) return startCamera();
       setError("Kamera tidak dapat diakses. Gunakan upload manual.");
     }
   }, []);
+
+  const switchCamera = useCallback(async (id: string) => {
+    stream?.getTracks().forEach((t) => t.stop());
+    setStream(null);
+    localStorage.setItem(STORAGE_KEY, id);
+    await startCamera(id);
+  }, [stream, startCamera]);
 
   const stopCamera = useCallback(() => {
     stream?.getTracks().forEach((t) => t.stop());
@@ -42,6 +63,10 @@ export function CameraCapture({ onCapture }: Props) {
     }, "image/jpeg");
   }, [onCapture, stopCamera]);
 
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.srcObject = stream;
+  }, [stream]);
+
   if (error) return <p className="text-sm font-medium text-red-400 text-center">{error}</p>;
 
   return (
@@ -52,6 +77,19 @@ export function CameraCapture({ onCapture }: Props) {
             <video ref={videoRef} autoPlay playsInline muted className="w-full" />
             <div className="absolute inset-0 pointer-events-none rounded-2xl ring-2 ring-inset ring-pink-300/30" />
           </div>
+          {devices.length > 1 && (
+            <select
+              value={selectedId}
+              onChange={(e) => switchCamera(e.target.value)}
+              className="w-full rounded-2xl border-2 border-gray-100 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-pink-300 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200"
+            >
+              {devices.map((d, i) => (
+                <option key={d.deviceId || i} value={d.deviceId}>
+                  {d.label || `Kamera ${i + 1}`}
+                </option>
+              ))}
+            </select>
+          )}
           <canvas ref={canvasRef} className="hidden" />
           <div className="flex w-full gap-3">
             <button onClick={stopCamera}
@@ -65,7 +103,7 @@ export function CameraCapture({ onCapture }: Props) {
           </div>
         </>
       ) : (
-        <button onClick={startCamera}
+        <button onClick={() => startCamera(localStorage.getItem(STORAGE_KEY) || undefined)}
           className="w-full rounded-2xl border-2 border-cyan-200 dark:border-cyan-900 bg-cyan-50 dark:bg-cyan-950/30 py-6 text-sm font-semibold text-cyan-500 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 hover:border-cyan-400 dark:hover:border-cyan-800 transition">
           <span className="block text-2xl mb-1">📷</span>
           Buka Kamera
