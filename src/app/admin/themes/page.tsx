@@ -93,7 +93,7 @@ export default function ThemesPage() {
 
   async function pollTest(taskId: string) {
     for (let i = 0; i < 80; i++) {
-      const r = await fetch(`/api/admin/preview-test/status?taskId=${taskId}`);
+      const r = await fetch(`/api/admin/preview-test?taskId=${taskId}`);
       const s = await r.json();
       if (s.status === "done") { setTestResult(s.imageUrl); setTestCredits(s.credits); setTestModalOpen(true); return; }
       if (s.status === "failed") throw new Error("Test gagal diproses kie.ai");
