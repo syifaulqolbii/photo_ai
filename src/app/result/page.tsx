@@ -17,7 +17,8 @@ function ResultContent() {
 
   const startRef = useRef(Date.now());
   const [now, setNow] = useState(Date.now());
-  const EST_MS = 45000;
+  // ponytail: estimasi dari 20 sampel produksi (mean ~97s, median ~89s) -> 90s
+  const EST_MS = 90000;
   const elapsed = now - startRef.current;
   const estPct = Math.min(100, Math.round((elapsed / EST_MS) * 100));
   const pct = status === "done" ? 100 : Math.min(estPct, 90);
