@@ -81,7 +81,11 @@ export default function ThemesPage() {
       const jt = await res.text();
       let j: any;
       try { j = JSON.parse(jt); } catch { throw new Error("Respons tidak valid dari server (cek API key kie.ai)"); }
-      if (!res.ok) throw new Error(j.error ?? "Test gagal");
+      if (!res.ok) {
+        const msg = j?.error ?? "Test gagal";
+        if (res.status === 504) throw new Error("Request timeout: generasi kie.ai lewat batas waktu server. Naikkan proxy_read_timeout nginx / gunakan callBackUrl.");
+        throw new Error(msg);
+      }
       setTestResult(j.imageUrl);
       setTestCredits(j.credits);
       setTestModalOpen(true);
