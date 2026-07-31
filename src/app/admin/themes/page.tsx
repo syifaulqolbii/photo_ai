@@ -78,7 +78,9 @@ export default function ThemesPage() {
       fd.append("prompt", testPrompt);
       fd.append("model", testModel);
       const res = await fetch("/api/admin/preview-test", { method: "POST", body: fd });
-      const j = await res.json();
+      const jt = await res.text();
+      let j: any;
+      try { j = JSON.parse(jt); } catch { throw new Error("Respons tidak valid dari server (cek API key kie.ai)"); }
       if (!res.ok) throw new Error(j.error ?? "Test gagal");
       setTestResult(j.imageUrl);
       setTestCredits(j.credits);

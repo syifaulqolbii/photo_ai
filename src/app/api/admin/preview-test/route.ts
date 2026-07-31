@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/require-session";
 import { supabase, BUCKET } from "@/lib/supabase";
-import { KIE, kieHeaders, pollTask, fetchCreditBalance } from "@/lib/kie";
+import { KIE, kieHeaders, pollTask, fetchCreditBalance, safeJson } from "@/lib/kie";
 import { getKieModels } from "@/lib/kie-models";
 
 export async function POST(req: NextRequest) {
@@ -38,11 +38,12 @@ export async function POST(req: NextRequest) {
       input: { input_urls: [inUrl], prompt, aspect_ratio: "auto", resolution: "1K", nsfw_checker: false },
     }),
   });
-  const kieJson = await kieRes.json() as { code: number; msg: string; data?: { taskId?: string } };
-  if (kieJson.code !== 200 || !kieJson.data?.taskId) {
-    console.error("[preview-test] kie.ai createTask failed:", kieJson);
-    return NextResponse.json({ error: kieJson.msg }, { status: 500 });
+  const r = await safeJson(kieRes);
+  if (!r.ok || r.json?.code !== 200 || !r.json?.data?.taskId) {
+    console.error("[preview-test] kie.ai createTask failed:", r.text.slice(0, 400));
+    return NextResponse.json({ error: "kie.ai gagal: " + (r.json?.msg ?? "respons non-JSON (cek API key / koneksi)") }, { status: 500 });
   }
+  const kieJson = r.json;
 
   let resultUrl: string;
   try {
