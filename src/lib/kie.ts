@@ -5,7 +5,7 @@ export { KIE, kieHeaders };
 
 type PollData = { state?: string; resultJson?: string };
 
-async function safeJson(res: Response): Promise<{ ok: boolean; json: any; text: string }> {
+export async function safeJson(res: Response): Promise<{ ok: boolean; json: any; text: string }> {
   const text = await res.text();
   try { return { ok: true, json: JSON.parse(text), text }; }
   catch { return { ok: false, json: null, text }; }
