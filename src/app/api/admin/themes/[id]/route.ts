@@ -18,8 +18,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
     return NextResponse.json(t);
   } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
     console.error("[themes PATCH] error id=", id, e);
-    return NextResponse.json({ error: "Gagal update tema" }, { status: 500 });
+    return NextResponse.json({ error: "Gagal update tema: " + msg }, { status: 500 });
   }
 }
 
