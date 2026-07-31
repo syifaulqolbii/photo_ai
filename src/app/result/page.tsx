@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
@@ -14,6 +14,14 @@ function ResultContent() {
   const [status, setStatus] = useState<Status>("processing");
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [showQR, setShowQR] = useState(false);
+
+  const startRef = useRef(Date.now());
+  const [now, setNow] = useState(Date.now());
+  const EST_MS = 45000;
+  const elapsed = now - startRef.current;
+  const estPct = Math.min(100, Math.round((elapsed / EST_MS) * 100));
+  const pct = status === "done" ? 100 : Math.min(estPct, 90);
+  const remaining = Math.max(0, Math.ceil((EST_MS - elapsed) / 1000));
 
   const poll = useCallback(async () => {
     if (!id) return;
@@ -33,6 +41,12 @@ function ResultContent() {
     return () => clearInterval(interval);
   }, [id, status, poll]);
 
+  useEffect(() => {
+    if (status !== "processing") return;
+    const t = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(t);
+  }, [status]);
+
   return (
     <div className="mx-auto max-w-md px-4 pb-10">
       {status === "processing" && (
@@ -42,11 +56,15 @@ function ResultContent() {
           </div>
           <h2 className="text-lg font-black text-gray-800 dark:text-slate-100">AI sedang bekerja...</h2>
           <p className="mt-2 text-sm text-gray-400 dark:text-slate-400">Transformasi foto kamu sedang diproses</p>
-          <div className="mt-5 flex justify-center gap-1">
-            {[0,1,2].map(i => (
-              <div key={i} className="h-2 w-2 rounded-full bg-pink-300 animate-bounce"
-                style={{ animationDelay: `${i * 0.15}s` }} />
-            ))}
+          <div className="mt-6 w-full">
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-pink-100 dark:bg-slate-700">
+              <div className="h-full rounded-full bg-gradient-to-r from-pink-500 to-rose-400 transition-all duration-500" style={{ width: `${pct}%` }} />
+            </div>
+            <p className="mt-2 text-xs text-gray-400 dark:text-slate-400">
+              {status === "processing"
+                ? (elapsed < EST_MS ? `Estimasi ±${EST_MS / 1000}s · sisa ~${remaining}s` : "Hampir selesai, mohon tunggu…")
+                : ""}
+            </p>
           </div>
         </div>
       )}
