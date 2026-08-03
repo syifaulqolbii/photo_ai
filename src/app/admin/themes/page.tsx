@@ -104,10 +104,15 @@ export default function ThemesPage() {
 
   async function savePreview() {
     if (!testerThemeId || !testResult) return;
+    const theme = themes.find(t => t.id === testerThemeId);
+    if (!theme) { alert("Tema tidak ditemukan"); return; }
+    let imgs: string[] = [];
+    try { const parsed = JSON.parse(theme.previewImages); if (Array.isArray(parsed)) imgs = parsed; } catch { /* ignore */ }
+    if (!imgs.includes(testResult)) imgs.push(testResult);
     const res = await fetch(`/api/admin/themes/${testerThemeId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ previewUrl: testResult, previewImages: JSON.stringify([testResult]) }),
+      body: JSON.stringify({ previewUrl: testResult, previewImages: JSON.stringify(imgs) }),
     });
     if (!res.ok) { alert("Gagal menyimpan preview"); return; }
     setThemes(await fetch("/api/admin/themes").then(r => r.json()));

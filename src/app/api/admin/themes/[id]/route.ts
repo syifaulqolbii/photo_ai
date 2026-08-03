@@ -10,15 +10,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await req.json() as Record<string, unknown>;
   try {
-    const update: Partial<typeof themes.$inferInsert> = {
-      label: String(body.label ?? ""),
-      emoji: String(body.emoji ?? "🎨"),
-      prompt: String(body.prompt ?? ""),
-      previewUrl: String(body.previewUrl ?? ""),
-      previewImages: typeof body.previewImages === "string" ? body.previewImages : JSON.stringify(body.previewImages ?? []),
-      active: Boolean(body.active),
-      sortOrder: Number(body.sortOrder ?? 0),
-    };
+    const update: Partial<typeof themes.$inferInsert> = {};
+    if (body.label !== undefined) update.label = String(body.label);
+    if (body.emoji !== undefined) update.emoji = String(body.emoji);
+    if (body.prompt !== undefined) update.prompt = String(body.prompt);
+    if (body.previewUrl !== undefined) update.previewUrl = String(body.previewUrl);
+    if (body.previewImages !== undefined) update.previewImages = typeof body.previewImages === "string" ? body.previewImages : JSON.stringify(body.previewImages);
+    if (body.active !== undefined) update.active = Boolean(body.active);
+    if (body.sortOrder !== undefined) update.sortOrder = Number(body.sortOrder);
     const [t] = await db.update(themes).set(update).where(eq(themes.id, id)).returning();
     if (!t) {
       console.error("[themes PATCH] 0 rows for id=", id);
