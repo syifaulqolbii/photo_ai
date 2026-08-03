@@ -13,6 +13,7 @@ export function CameraCapture({ onCapture }: Props) {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null);
 
   useEffect(() => {
     if (videoRef.current) videoRef.current.srcObject = stream;
@@ -47,12 +48,14 @@ export function CameraCapture({ onCapture }: Props) {
   const stopCamera = useCallback(() => {
     stream?.getTracks().forEach((t) => t.stop());
     setStream(null);
+    setVideoAspectRatio(null);
   }, [stream]);
 
   const capture = useCallback(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas) return;
+    if (!video || !canvas || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
+    if (!video.videoWidth || !video.videoHeight) return;
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext("2d")?.drawImage(video, 0, 0);
@@ -63,18 +66,29 @@ export function CameraCapture({ onCapture }: Props) {
     }, "image/jpeg");
   }, [onCapture, stopCamera]);
 
-  useEffect(() => {
-    if (videoRef.current) videoRef.current.srcObject = stream;
-  }, [stream]);
-
   if (error) return <p className="text-sm font-medium text-red-400 text-center">{error}</p>;
 
   return (
     <div className="flex flex-col items-center gap-3 w-full">
       {stream ? (
         <>
-          <div className="relative w-full overflow-hidden rounded-2xl border-2 border-pink-200 dark:border-pink-900/50 bg-black">
-            <video ref={videoRef} autoPlay playsInline muted className="w-full" />
+          <div
+            className="relative w-full overflow-hidden rounded-2xl border-2 border-pink-200 dark:border-pink-900/50 bg-black"
+            style={{ aspectRatio: videoAspectRatio ?? "16 / 9" }}
+          >
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              onLoadedMetadata={(event) => {
+                const video = event.currentTarget;
+                if (video.videoWidth && video.videoHeight) {
+                  setVideoAspectRatio(video.videoWidth / video.videoHeight);
+                }
+              }}
+              className="absolute inset-0 h-full w-full object-contain"
+            />
             <div className="absolute inset-0 pointer-events-none rounded-2xl ring-2 ring-inset ring-pink-300/30" />
           </div>
           {devices.length > 1 && (
