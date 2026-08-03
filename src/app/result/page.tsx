@@ -49,7 +49,7 @@ function ResultContent() {
   }, [status]);
 
   return (
-    <div className="mx-auto max-w-md px-4 pb-10">
+    <div className="mx-auto max-w-5xl px-4 pb-10">
       {status === "processing" && (
         <div className="rounded-3xl bg-white dark:bg-slate-800 p-10 shadow-lg shadow-pink-100 dark:shadow-none border border-pink-50 dark:border-slate-700 text-center">
           <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-pink-100 to-cyan-100 dark:from-slate-700 dark:to-slate-700">
@@ -154,7 +154,7 @@ export default function ResultPage() {
         </div>
       </header>
       <Suspense fallback={
-        <div className="mx-auto max-w-md px-4">
+        <div className="mx-auto max-w-5xl px-4">
           <div className="rounded-3xl bg-white dark:bg-slate-800 p-10 text-center shadow-lg shadow-pink-100 dark:shadow-none border border-pink-50 dark:border-slate-700">
             <div className="h-10 w-10 mx-auto animate-spin rounded-full border-4 border-pink-400 border-t-transparent" />
           </div>

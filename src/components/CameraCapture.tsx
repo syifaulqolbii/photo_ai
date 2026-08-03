@@ -14,6 +14,10 @@ export function CameraCapture({ onCapture }: Props) {
   const [selectedId, setSelectedId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null);
+  const [timerSeconds, setTimerSeconds] = useState<3 | 5>(3);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [capturedFile, setCapturedFile] = useState<File | null>(null);
+  const [capturedPreview, setCapturedPreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (videoRef.current) videoRef.current.srcObject = stream;
@@ -22,9 +26,11 @@ export function CameraCapture({ onCapture }: Props) {
   const startCamera = useCallback(async (deviceId?: string) => {
     setError(null);
     try {
-      const constraints: MediaStreamConstraints = deviceId
-        ? { video: { deviceId: { exact: deviceId } } }
-        : { video: { facingMode: "user" } };
+      const videoConstraints = {
+        ...(deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "user" }),
+        aspectRatio: { ideal: 16 / 9 },
+      };
+      const constraints: MediaStreamConstraints = { video: videoConstraints };
       const s = await navigator.mediaDevices.getUserMedia(constraints);
       setStream(s);
       const active = s.getVideoTracks()[0]?.getSettings().deviceId ?? "";
@@ -49,6 +55,7 @@ export function CameraCapture({ onCapture }: Props) {
     stream?.getTracks().forEach((t) => t.stop());
     setStream(null);
     setVideoAspectRatio(null);
+    setCountdown(null);
   }, [stream]);
 
   const capture = useCallback(() => {
@@ -61,16 +68,68 @@ export function CameraCapture({ onCapture }: Props) {
     canvas.getContext("2d")?.drawImage(video, 0, 0);
     canvas.toBlob((blob) => {
       if (!blob) return;
-      onCapture(new File([blob], "capture.jpg", { type: "image/jpeg" }));
+      const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
+      setCapturedFile(file);
+      setCapturedPreview(URL.createObjectURL(file));
       stopCamera();
     }, "image/jpeg");
-  }, [onCapture, stopCamera]);
+  }, [stopCamera]);
+
+  useEffect(() => {
+    if (countdown === null) return;
+    const timeout = window.setTimeout(() => {
+      if (countdown === 1) {
+        setCountdown(null);
+        capture();
+      } else {
+        setCountdown(countdown - 1);
+      }
+    }, 1000);
+    return () => window.clearTimeout(timeout);
+  }, [countdown, capture]);
+
+  useEffect(() => {
+    return () => {
+      if (capturedPreview) URL.revokeObjectURL(capturedPreview);
+    };
+  }, [capturedPreview]);
+
+  const retake = useCallback(async () => {
+    if (capturedPreview) URL.revokeObjectURL(capturedPreview);
+    setCapturedFile(null);
+    setCapturedPreview(null);
+    await startCamera(selectedId || undefined);
+  }, [capturedPreview, selectedId, startCamera]);
+
+  const confirmCapture = useCallback(() => {
+    if (!capturedFile) return;
+    onCapture(capturedFile);
+  }, [capturedFile, onCapture]);
 
   if (error) return <p className="text-sm font-medium text-red-400 text-center">{error}</p>;
 
   return (
     <div className="flex flex-col items-center gap-3 w-full">
-      {stream ? (
+      {capturedPreview ? (
+        <div className="flex w-full flex-col items-center gap-4">
+          <div className="w-full overflow-hidden rounded-2xl border-2 border-pink-200 dark:border-pink-900/50 bg-black">
+            <img src={capturedPreview} alt="Preview foto yang diambil" className="block max-h-[70vh] w-full object-contain" />
+          </div>
+          <p className="text-center text-sm font-semibold text-gray-500 dark:text-slate-400">
+            Apakah pose dan gaya fotonya sudah cocok?
+          </p>
+          <div className="flex w-full gap-3">
+            <button onClick={retake}
+              className="flex-1 rounded-2xl border-2 border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-4 py-3 text-sm font-bold text-gray-500 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition">
+              Ulangi Foto
+            </button>
+            <button onClick={confirmCapture}
+              className="flex-1 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 px-4 py-3 text-sm font-black text-white shadow-md shadow-pink-200 hover:opacity-90 transition">
+              Proses dengan AI
+            </button>
+          </div>
+        </div>
+      ) : stream ? (
         <>
           <div
             className="relative w-full overflow-hidden rounded-2xl border-2 border-pink-200 dark:border-pink-900/50 bg-black"
@@ -89,12 +148,20 @@ export function CameraCapture({ onCapture }: Props) {
               }}
               className="absolute inset-0 h-full w-full object-contain"
             />
+            {countdown !== null && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                <span key={countdown} className="animate-ping-once text-8xl font-black text-white drop-shadow-[0_3px_8px_rgba(0,0,0,0.5)]">
+                  {countdown}
+                </span>
+              </div>
+            )}
             <div className="absolute inset-0 pointer-events-none rounded-2xl ring-2 ring-inset ring-pink-300/30" />
           </div>
           {devices.length > 1 && (
             <select
               value={selectedId}
               onChange={(e) => switchCamera(e.target.value)}
+              disabled={countdown !== null}
               className="w-full rounded-2xl border-2 border-gray-100 dark:border-slate-700 px-3 py-2 text-sm outline-none focus:border-pink-300 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200"
             >
               {devices.map((d, i) => (
@@ -106,14 +173,26 @@ export function CameraCapture({ onCapture }: Props) {
           )}
           <canvas ref={canvasRef} className="hidden" />
           <div className="flex w-full gap-3">
-            <button onClick={stopCamera}
+            <button onClick={stopCamera} disabled={countdown !== null}
               className="rounded-2xl border-2 border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-4 py-2 text-sm font-bold text-gray-400 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition">
               Batal
             </button>
-            <button onClick={capture}
-              className="flex-1 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 py-2 text-sm font-black text-white shadow-md shadow-pink-200 hover:opacity-90 transition">
-              📸 Ambil Foto
+            <button onClick={() => setCountdown(timerSeconds)} disabled={countdown !== null}
+              className="flex-1 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 py-2 text-sm font-black text-white shadow-md shadow-pink-200 hover:opacity-90 transition disabled:cursor-not-allowed disabled:opacity-70">
+              {countdown !== null ? `Siap-siap... ${countdown}` : `📸 Foto dalam ${timerSeconds} detik`}
             </button>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-slate-400">
+            <span>Timer:</span>
+            {[3, 5].map((seconds) => (
+              <button key={seconds} type="button" disabled={countdown !== null}
+                onClick={() => setTimerSeconds(seconds as 3 | 5)}
+                className={`rounded-full px-3 py-1 font-bold transition ${timerSeconds === seconds
+                  ? "bg-pink-100 text-pink-500 dark:bg-pink-900/40 dark:text-pink-300"
+                  : "bg-gray-100 text-gray-400 dark:bg-slate-700 dark:text-slate-300"}`}>
+                {seconds}s
+              </button>
+            ))}
           </div>
         </>
       ) : (

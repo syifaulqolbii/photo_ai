@@ -62,7 +62,7 @@ export default function HomePage() {
         <p className="mt-3 text-sm font-medium text-gray-500 dark:text-slate-400">Transform your photo with AI magic ✨</p>
       </header>
 
-      <div className="mx-auto max-w-md px-4 pb-10">
+      <div className="mx-auto max-w-5xl px-4 pb-10">
         <div className="mb-6 flex items-center justify-center gap-2">
           {STEPS.map((s, i) => (
             <div key={s} className="flex items-center gap-2">
@@ -95,7 +95,7 @@ export default function HomePage() {
         )}
 
         {step === "capture" && (
-          <div className="rounded-3xl bg-white dark:bg-slate-800 p-6 shadow-lg shadow-pink-100 dark:shadow-none border border-pink-50 dark:border-slate-700">
+          <div className="rounded-3xl bg-white dark:bg-slate-800 p-4 sm:p-6 shadow-lg shadow-pink-100 dark:shadow-none border border-pink-50 dark:border-slate-700">
             {selectedTheme && (() => {
               const t = themeCards.find(t => t.id === selectedTheme)!;
               return (
