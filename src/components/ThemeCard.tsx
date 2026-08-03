@@ -48,21 +48,21 @@ export function ThemeCard({ theme, selected, onSelect }: {
       {/* Modal */}
       {modalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-5"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 sm:p-5"
           onClick={close}
         >
           <div
-            className="w-full max-w-xs rounded-3xl overflow-hidden shadow-2xl"
+            className="w-[92vw] max-w-md sm:max-w-lg lg:max-w-xl rounded-3xl overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Top bar — white */}
-            <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-800">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{theme.emoji}</span>
-                <span className="text-sm font-black text-gray-800 dark:text-slate-100">{theme.label}</span>
-                <span className="text-xs text-gray-400 dark:text-slate-500">{idx + 1}/{total}</span>
+            <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-4 bg-white dark:bg-slate-800">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <span className="text-lg sm:text-xl">{theme.emoji}</span>
+                <span className="text-sm sm:text-base lg:text-lg font-black text-gray-800 dark:text-slate-100">{theme.label}</span>
+                <span className="text-xs sm:text-sm text-gray-400 dark:text-slate-500">{idx + 1}/{total}</span>
               </div>
-              <button onClick={close} className="text-gray-300 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 text-xl leading-none">×</button>
+              <button onClick={close} className="text-gray-300 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 text-xl sm:text-2xl leading-none">×</button>
             </div>
 
             {/* Image */}
@@ -72,31 +72,31 @@ export function ThemeCard({ theme, selected, onSelect }: {
                  alt={`${theme.label} ${idx + 1}`}
                 fill
                 className="object-contain"
-                sizes="320px"
+                sizes="(min-width: 1024px) 576px, (min-width: 640px) 512px, 92vw"
                 priority
               />
               <button onClick={prev}
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 dark:bg-slate-800/80 text-gray-700 dark:text-slate-200 flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 transition text-base shadow">
+                className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/80 dark:bg-slate-800/80 text-gray-700 dark:text-slate-200 flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 transition text-base sm:text-xl shadow">
                 ‹
               </button>
               <button onClick={next}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 dark:bg-slate-800/80 text-gray-700 dark:text-slate-200 flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 transition text-base shadow">
+                className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/80 dark:bg-slate-800/80 text-gray-700 dark:text-slate-200 flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 transition text-base sm:text-xl shadow">
                 ›
               </button>
-              <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+              <div className="absolute bottom-2 sm:bottom-3 left-0 right-0 flex justify-center gap-1.5 sm:gap-2">
                 {imgs.map((_, i) => (
                   <button key={i} onClick={() => setIdx(i)}
-                    className={cn("w-1.5 h-1.5 rounded-full transition-all", i === idx ? "bg-pink-500" : "bg-gray-300")} />
+                    className={cn("w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all", i === idx ? "bg-pink-500" : "bg-gray-300")} />
                 ))}
               </div>
             </div>
 
             {/* Footer — white */}
-            <div className="px-4 py-4 bg-white dark:bg-slate-800">
+            <div className="px-4 py-4 sm:px-6 sm:py-5 bg-white dark:bg-slate-800">
               <button
                 onClick={() => { onSelect(); close(); }}
                 className={cn(
-                  "w-full rounded-2xl py-3 text-sm font-black transition",
+                  "w-full rounded-2xl py-3 sm:py-3.5 text-sm sm:text-base font-black transition",
                   selected
                     ? "bg-pink-500 text-white"
                     : "bg-gradient-to-r from-pink-500 to-rose-400 text-white hover:opacity-90"
