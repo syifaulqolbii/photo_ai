@@ -88,12 +88,8 @@ function ResultContent() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowQR(true)}
-                className="flex-1 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 py-3 text-center text-sm font-black text-white shadow-md shadow-pink-200 dark:shadow-none hover:opacity-90 transition">
+                className="w-full rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 py-3 text-center text-sm font-black text-white shadow-md shadow-pink-200 dark:shadow-none hover:opacity-90 transition">
                 📥 Download
-              </button>
-              <button onClick={() => router.push("/")}
-                className="flex-1 rounded-2xl border-2 border-cyan-200 dark:border-cyan-900 bg-cyan-50 dark:bg-cyan-950/30 py-3 text-sm font-bold text-cyan-500 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition">
-                Foto Lagi
               </button>
             </div>
           </div>
